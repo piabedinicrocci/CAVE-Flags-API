@@ -1,27 +1,12 @@
+// index.js
 const express = require('express');
 const mysql = require('mysql2/promise');
 const cors = require('cors');
+const db = require('./db');
 
 const app = express();
-app.use(express.json()); // Para analizar el cuerpo de las solicitudes JSON
-app.use(cors()); // Habilita CORS
-
-// Configuración de la conexión a la base de datos
-const dbConfig = {
-    host: 'mysql-vrmarket-pladema-ef62.d.aivencloud.com',
-    port: 26116,
-    user: 'avnadmin',
-    password: 'AVNS_BD6D-d03halBr0cMHzd',
-    database: 'cave'
-};
-
-const pool = mysql.createPool({
-    host: 'mysql-vrmarket-pladema-ef62.d.aivencloud.com',
-    port: 26116,
-    user: 'avnadmin',
-    password: 'AVNS_BD6D-d03halBr0cMHzd',
-    database: 'cave'
-});
+app.use(express.json());
+app.use(cors());
 
 // Función para mapear colores a nombres de prefab
 function mapColorToPrefab(color) {
@@ -37,234 +22,139 @@ function mapColorToPrefab(color) {
 
 // Endpoint para cargar banderas
 app.get('/flags/:dni', async (req, res) => {
-    const dni = req.params.dni;
-    const query = `
-        SELECT B.color, A.posicionX, A.posicionZ, A.id
-        FROM APRENDIZAJE A
-        JOIN BANDERA B ON A.id_bandera = B.id
-        WHERE A.dni = ? AND DATE(A.fecha) = CURDATE()
-        ORDER BY A.id ASC`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        const [rows] = await connection.execute(query, [dni]);
-        connection.end();
-
+        const dni = req.params.dni;
+        const rows = await db.getFlagsByDni(dni);
         const flags = rows.map(row => {
             const prefabName = mapColorToPrefab(row.color);
             if (prefabName) {
-                return {
-                    modelName: prefabName,
-                    positionX: row.posicionX,
-                    positionZ: row.posicionZ,
-                    id: row.id
-                };
+                return { modelName: prefabName, positionX: row.posicionX, positionZ: row.posicionZ, id: row.id };
             }
             return null;
-        }).filter(flag => flag !== null); // Filtra los nulos
-
+        }).filter(flag => flag !== null);
         res.json(flags);
     } catch (error) {
-        console.error('Error al conectar a la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar el tiempo en aprendizaje
 app.put('/flags/learning/:dni/:id', async (req, res) => {
-    const dni = req.params.dni;
-    const id = req.params.id;
-    const { timeTaken } = req.body;
-    const query = `UPDATE APRENDIZAJE SET tiempo_encontrada_aprendizaje = ? WHERE dni = ? AND id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [timeTaken, dni, id]);
-        connection.end();
+        const { dni, id } = req.params;
+        const { timeTaken } = req.body;
+        await db.updateLearningTime(dni, id, timeTaken);
         res.json({ message: `Tiempo actualizado para la bandera ${id} y DNI ${dni}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar el tiempo en random
 app.put('/flags/random/:dni/:id', async (req, res) => {
-    const dni = req.params.dni;
-    const id = req.params.id;
-    const { timeTaken } = req.body;
-    const query = `UPDATE APRENDIZAJE SET tiempo_encontrada_random = ? WHERE dni = ? AND id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [timeTaken, dni, id]);
-        connection.end();
+        const { dni, id } = req.params;
+        const { timeTaken } = req.body;
+        await db.updateRandomTime(dni, id, timeTaken);
         res.json({ message: `Tiempo random actualizado para la bandera ${id} y DNI ${dni}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar f_random
 app.put('/flags/randomFlag/:id', async (req, res) => {
-    const id = req.params.id;
-    const query = `UPDATE APRENDIZAJE SET f_random = TRUE WHERE id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [id]);
-        connection.end();
+        const { id } = req.params;
+        await db.updateFRandom(id);
         res.json({ message: `f_random actualizado para el idAprendizaje ${id}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar el tiempo en between
 app.put('/flags/between/:dni/:id', async (req, res) => {
-    const dni = req.params.dni;
-    const id = req.params.id;
-    const { timeTaken } = req.body;
-    const query = `UPDATE APRENDIZAJE SET tiempo_plantada_entre = ? WHERE dni = ? AND id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [timeTaken, dni, id]);
-        connection.end();
+        const { dni, id } = req.params;
+        const { timeTaken } = req.body;
+        await db.updateBetweenTime(dni, id, timeTaken);
         res.json({ message: `Tiempo between actualizado para la bandera ${id} y DNI ${dni}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar f_entre
 app.put('/flags/betweenFlag/:id', async (req, res) => {
-    const id = req.params.id;
-    const query = `UPDATE APRENDIZAJE SET f_entre = TRUE WHERE id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [id]);
-        connection.end();
+        const { id } = req.params;
+        await db.updateFEntre(id);
         res.json({ message: `f_entre actualizado para el idAprendizaje ${id}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar el tiempo en circle
 app.put('/flags/circle/:dni/:id', async (req, res) => {
-    const dni = req.params.dni;
-    const id = req.params.id;
-    const { timeTaken } = req.body;
-    const query = `UPDATE APRENDIZAJE SET tiempo_encontrada_circun = ? WHERE dni = ? AND id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [timeTaken, dni, id]);
-        connection.end();
+        const { dni, id } = req.params;
+        const { timeTaken } = req.body;
+        await db.updateCircleTime(dni, id, timeTaken);
         res.json({ message: `Tiempo circle actualizado para la bandera ${id} y DNI ${dni}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar f_circunferencia
 app.put('/flags/circleFlag/:id', async (req, res) => {
-    const id = req.params.id;
-    const query = `UPDATE APRENDIZAJE SET f_circunferencia = TRUE WHERE id = ?`;
-
     try {
-        const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(query, [id]);
-        connection.end();
+        const { id } = req.params;
+        await db.updateFCircle(id);
         res.json({ message: `f_circunferencia actualizado para el idAprendizaje ${id}` });
     } catch (error) {
-        console.error('Error al actualizar la base de datos:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-
 // Endpoint para obtener el DNI de la tabla CONFIG (id = 1)
 app.get('/config/dni', async (req, res) => {
     try {
-        const connection = await pool.getConnection();
-        const [rows] = await connection.execute('SELECT dni FROM CONFIG WHERE id = 1');
-        connection.release();
-
+        const rows = await db.getDniFromConfig();
         if (rows.length > 0) {
             res.json({ dni: rows[0].dni });
         } else {
             res.status(404).json({ message: 'DNI no encontrado en la tabla CONFIG para id = 1' });
         }
     } catch (error) {
-        console.error('Error al obtener el DNI:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
 // Endpoint para actualizar el DNI en la tabla CONFIG (id = 1)
 app.put('/config/dni/:dni', async (req, res) => {
-    const dni = req.params.dni;
-
-    if (!dni) {
-        return res.status(400).json({ message: 'El DNI es requerido en la ruta' });
-    }
-
     try {
-        const connection = await pool.getConnection();
-        await connection.execute('UPDATE CONFIG SET dni = ? WHERE id = 1', [dni]);
-        connection.release();
-
+        const dni = req.params.dni;
+        await db.updateDniInConfig(dni);
         res.json({ message: `DNI ${dni} actualizado correctamente para id = 1` });
     } catch (error) {
-        console.error('Error al actualizar el DNI:', error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Endpoint para subir configurar el aprendizaje (guardar experimento desde pagina web) 
+// Endpoint para subir configurar el aprendizaje (guardar experimento desde pagina web)
 app.post('/learning', async (req, res) => {
     try {
         const { flags } = req.body;
-
-        // Preparar la consulta
-        const query = `
-            INSERT INTO APRENDIZAJE (id_bandera, dni, posicionX, posicionZ, fecha) 
-            VALUES (?, ?, ?, ?, NOW())
-        `;
-
-        // Insertar cada bandera en la base de datos
-        for (const flag of flags) {
-            await pool.query(query, [
-                flag.id_bandera,
-                flag.dni,
-                flag.positionX,
-                flag.positionZ
-            ]);
-        }
-
-        res.json({
-            success: true,
-            message: 'Experimento guardado correctamente'
-        });
+        await db.insertLearningFlags(flags);
+        res.json({ success: true, message: 'Experimento guardado correctamente' });
     } catch (error) {
-        console.error('Error al guardar el experimento:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error al guardar el experimento'
-        });
+        res.status(500).json({ success: false, message: 'Error al guardar el experimento' });
     }
 });
 
-
-// Inicia el servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
