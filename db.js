@@ -84,6 +84,16 @@ async function insertLearningFlags(flags) {
     }
 }
 
+async function getPersonByDni(dni) {
+    const query = 'SELECT * FROM PERSONA WHERE dni = ?';
+    return executeQuery(query, [dni]);
+}
+
+async function insertPerson(dni, nombre, apellido, fecha_nacimiento) {
+    const query = 'INSERT INTO PERSONA (dni, nombre, apellido, fecha_nacimiento) VALUES (?, ?, ?, ?)';
+    return executeQuery(query, [dni, nombre, apellido, fecha_nacimiento]);
+}
+
 module.exports = {
     getFlagsByDni,
     updateLearningTime,
@@ -95,5 +105,7 @@ module.exports = {
     updateFCircle,
     getDniFromConfig,
     updateDniInConfig,
-    insertLearningFlags
+    insertLearningFlags,
+    getPersonByDni,
+    insertPerson
 };

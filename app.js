@@ -155,6 +155,42 @@ app.post('/learning', async (req, res) => {
     }
 });
 
+// Endpoint para verificar si un DNI existe en la tabla PERSONA
+app.get('/person/:dni', async (req, res) => {
+    const dni = req.params.dni;
+
+    if (!dni) {
+        return res.status(400).json({ message: 'El DNI es requerido en la ruta' });
+    }
+
+    try {
+        const rows = await db.getPersonByDni(dni);
+        if (rows.length > 0) {
+            res.json(rows[0]); // Devuelve la persona
+        } else {
+            res.status(204).send();
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint para crear una persona
+app.post('/person', async (req, res) => {
+    const { dni, nombre, apellido, fecha_nacimiento } = req.body;
+
+    if (!dni || !nombre || !apellido || !fecha_nacimiento) {
+        return res.status(400).json({ message: 'Todos los campos son requeridos' });
+    }
+
+    try {
+        await db.insertPerson(dni, nombre, apellido, fecha_nacimiento);
+        res.status(201).json({ message: 'Persona creada correctamente' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en el puerto ${PORT}`);
