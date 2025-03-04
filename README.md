@@ -207,3 +207,41 @@
         ]
     }
     ```
+
+### 12. Obtener Persona por DNI
+
+* **Ruta Genérica:** `http://localhost:3000/person/:dni`
+* **Método:** `GET`
+* **Descripción:** Obtiene los datos de una persona por su DNI.
+* **Parámetros:**
+    * `dni` (ruta): DNI de la persona.
+* **Ejemplo de Solicitud:**
+
+    ```bash
+    GET http://localhost:3000/person/43982024
+    ```
+
+### 13. Subir Persona
+
+* **Ruta Genérica:** `http://localhost:3000/person`
+* **Método:** `POST`
+* **Descripción:** Sube los datos de una nueva persona.
+* **Parámetros:**
+    * `dni` (body): DNI de la persona.
+    * `nombre` (body): Nombre de la persona.
+    * `apellido` (body): Apellido de la persona.
+    * `fecha_nacimiento` (body): Fecha de nacimiento de la persona (formato ISO 8601).
+* **Ejemplo de Solicitud:**
+
+    ```bash
+    POST http://localhost:3000/person
+    ```
+
+    ```json
+    {
+        "dni": 43982024,
+        "nombre": "Pia",
+        "apellido": "Bedini",
+        "fecha_nacimiento": "2002-02-08"
+    }
+    ```
