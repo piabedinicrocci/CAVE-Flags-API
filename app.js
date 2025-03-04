@@ -191,8 +191,45 @@ app.put('/flags/circleFlag/:id', async (req, res) => {
 });
 
 
+// Endpoint para obtener el DNI de la tabla CONFIG (id = 1)
+app.get('/config/dni', async (req, res) => {
+    try {
+        const connection = await pool.getConnection();
+        const [rows] = await connection.execute('SELECT dni FROM CONFIG WHERE id = 1');
+        connection.release();
+
+        if (rows.length > 0) {
+            res.json({ dni: rows[0].dni });
+        } else {
+            res.status(404).json({ message: 'DNI no encontrado en la tabla CONFIG para id = 1' });
+        }
+    } catch (error) {
+        console.error('Error al obtener el DNI:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Endpoint para actualizar el DNI en la tabla CONFIG (id = 1)
+app.put('/config/dni/:dni', async (req, res) => {
+    const dni = req.params.dni;
+
+    if (!dni) {
+        return res.status(400).json({ message: 'El DNI es requerido en la ruta' });
+    }
+
+    try {
+        const connection = await pool.getConnection();
+        await connection.execute('UPDATE CONFIG SET dni = ? WHERE id = 1', [dni]);
+        connection.release();
+
+        res.json({ message: `DNI ${dni} actualizado correctamente para id = 1` });
+    } catch (error) {
+        console.error('Error al actualizar el DNI:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Endpoint para subir configurar el aprendizaje (guardar experimento desde pagina web) 
-// Endpoint para guardar el aprendizaje
 app.post('/learning', async (req, res) => {
     try {
         const { flags } = req.body;
@@ -225,8 +262,6 @@ app.post('/learning', async (req, res) => {
         });
     }
 });
-
-
 
 
 // Inicia el servidor
